@@ -35,8 +35,8 @@ jobs:
         check-latest: true
     - name: Download Python ${{ matrix.python-version }} source code
       run: |
-        curl -o Python.tar.gz $(python ./geturl.py)
-        tar -xf Python.tar.gz
+        curl -o Python.tgz $(python ./geturl.py)
+        tar -xzf Python.tgz
     - name: Add iOS/Resources/bin to PATH
       working-directory: Python
       run: |
