@@ -37,13 +37,12 @@ jobs:
       run: |
         curl -o Python.tgz $(python ./geturl.py)
         tar -xzf Python.tgz
-        ls
     - name: Add iOS/Resources/bin to PATH
-      working-directory: Python
+      working-directory: Python-${{ steps.py.outputs.python-version }}
       run: |
         echo "${{ github.workspace }}/Python/iOS/Resources/bin" >> $GITHUB_PATH
     - name: Configure
-      working-directory: Python
+      working-directory: Python-${{ steps.py.outputs.python-version }}
       run: >
         ./configure
         --enable-framework="./iOS/Frameworks/main/"
@@ -51,12 +50,12 @@ jobs:
         --build=arm64-apple-darwin
         --with-build-python="${{ steps.py.outputs.python-path }}"
     - name: Build Python.framework
-      working-directory: Python
+      working-directory: Python-${{ steps.py.outputs.python-version }}
       run: |
         make
         make install
     - name: Create an archive
-      working-directory: Python
+      working-directory: Python-${{ steps.py.outputs.python-version }}
       run: >
         tar -czf
         ./iOS/Frameworks/dist/Python.framework.tar.gz
