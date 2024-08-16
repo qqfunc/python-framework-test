@@ -36,7 +36,7 @@ jobs:
     - name: Download Python ${{ matrix.python-version }} source code
       run: |
         curl -o Python.tgz $(python ./geturl.py)
-        tar -xzf Python.tgz
+        tar -xzf Python.tgz -C Python
     - name: Add iOS/Resources/bin to PATH
       working-directory: Python
       run: |
