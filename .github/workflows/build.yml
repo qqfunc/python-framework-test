@@ -33,13 +33,14 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
         check-latest: true
-    - name: Download Python ${{ steps.py.outputs.python-version }} source code
+    - name: Download Python ${{ matrix.python-version }} source code
       run: |
-        curl -o Python.tgz $(python ./geturl.py)
-        tar -xf Python.tgz
+        curl -o Python.tar.gz $(python ./geturl.py)
+        tar -xf Python.tar.gz
     - name: Add iOS/Resources/bin to PATH
       working-directory: Python
-      run: echo "$(pwd)/iOS/Resources/bin" >> $GITHUB_PATH
+      run: |
+        echo "${{ github.workspace }}/Python/iOS/Resources/bin" >> $GITHUB_PATH
     - name: Configure
       working-directory: Python
       run: >
@@ -53,3 +54,9 @@ jobs:
       run: |
         make
         make install
+    - name: Create an archive
+      working-directory: Python
+      run: >
+        tar -czf
+        ./iOS/Frameworks/dist/Python.framework.tar.gz
+        ./iOS/Frameworks/dist/Python.framework
