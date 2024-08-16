@@ -40,7 +40,7 @@ jobs:
         echo "python-url=$(python ./geturl.py)" >> $GITHUB_OUTPUT
     - name: Download Python ${{ matrix.python-version }} source code
       run: |
-        curl -O $(python ./geturl.py)
+        curl -O ${{ steps.info.outputs.python-url }}
         tar -xzf Python-${{ steps.info.outputs.python-version }}.tgz
     - name: Add iOS/Resources/bin to PATH
       working-directory: Python-${{ steps.info.outputs.python-version }}
