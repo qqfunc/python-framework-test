@@ -12,7 +12,7 @@ concurrency:
 
 jobs:
   build:
-    name: Build with Python ${{ matrix.python-version }}
+    name: Build
 
     runs-on: macos-latest
     strategy:
@@ -54,6 +54,7 @@ jobs:
         --host=${{ matrix.build-host }}
         --build=arm64-apple-darwin
         --with-build-python="${{ steps.py.outputs.python-path }}"
+        ; cat config.log
     - name: Build Python.framework
       working-directory: Python-${{ steps.info.outputs.python-version }}
       run: |
