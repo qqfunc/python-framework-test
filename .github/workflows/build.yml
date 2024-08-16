@@ -44,6 +44,8 @@ jobs:
         v${{ steps.py-ver.outputs.long }}
         -A tar.gz
         -O Python.tar.gz
+      env:
+        GH_TOKEN: ${{ github.token }}
     - name: Extract Python source code archive
       run: |
         tar -xzf Python.tar.gz
