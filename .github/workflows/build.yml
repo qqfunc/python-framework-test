@@ -1,0 +1,55 @@
+name: Build
+
+on:
+  push:
+    branches: ['main']
+  pull_request:
+    branches: ['main']
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build
+
+    runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.13-dev']
+        build-host: 
+          - 'arm64-apple-ios'
+          - 'arm64-apple-ios-simulator'
+          - 'x86_64-apple-ios-simulator'
+
+    steps:
+    - name: Checkout ${{ github.repository }}
+      uses: actions/checkout@v4
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      id: py
+      with:
+        python-version: ${{ matrix.python-version }}
+        check-latest: true
+    - name: Download Python ${{ steps.py.outputs.python-version }} source code
+      run: |
+        curl -O Python.tgz $(python ./geturl.py)
+        tar -xf Python.tgz
+    - name: Add iOS/Resources/bin to PATH
+      working-directory: Python
+      run: echo "$(pwd)/iOS/Resources/bin" >> $GITHUB_PATH
+    - name: Configure
+      working-directory: Python
+      run: >
+        ./configure
+        --enable-framework="./iOS/Frameworks/main/"
+        --host=${{ matrix.build-host }}
+        --build=arm64-apple-darwin
+        --with-build-python="${{ steps.py.outputs.python-path }}"
+    - name: Build Python.framework
+      working-directory: Python
+      run: |
+        make
+        make install
