@@ -68,6 +68,8 @@ jobs:
       run: |
         gh release download v${{ needs.fetch.outputs.xz }} -R tukaani-project/xz -p xz-${{ needs.fetch.outputs.xz }}.tar.gz
         tar -xzf xz-${{ needs.fetch.outputs.xz }}.tar.gz
+      env:
+        GH_TOKEN: ${{ github.token }}
     - name: Configure XZ Utils Build
       working-directory: xz-${{ needs.fetch.outputs.xz }}
       run: >
