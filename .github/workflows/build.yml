@@ -16,6 +16,8 @@ jobs:
     runs-on: ubuntu-latest
 
     outputs:
+      ios: '13.0'
+      ffi: ${{ fromJson(steps.ver.outputs.result).ffi }}
       xz: ${{ fromJson(steps.ver.outputs.result).xz }}
 
     steps:
@@ -34,9 +36,190 @@ jobs:
           })
           return { ffi: ffi.tag_name.slice(1), xz: xz.tag_name.slice(1) }
 
-  build:
-    name: Build
+  build-bz2:
+    name: Build bzip2
     needs: fetch
+    runs-on: macos-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        build:
+          - target: 'iphoneos.arm64'
+            sdk: 'iphoneos'
+            arch: 'arm64'
+            host: 'arm64-apple-ios${{ needs.fetch.outputs.ios }}'
+          - target: 'iphonesimulator.arm64'
+            sdk: 'iphonesimulator'
+            arch: 'arm64'
+            host: 'arm64-apple-ios${{ needs.fetch.outputs.ios }}-simulator'
+          - target: 'iphonesimulator.x86_64'
+            sdk: 'iphonesimulator'
+            arch: 'x86_64'
+            host: 'x86_64-apple-ios${{ needs.fetch.outputs.ios }}-simulator'
+
+    steps:
+    - name: Checkout ${{ github.repository }}
+      uses: actions/checkout@v4
+    - name: Cache bzip2
+      id: cache
+      uses: actions/cache@v4
+      with:
+        path: ${{ github.workspace }}/install/bz2
+        key: bz2-${{ matrix.build.sdk }}-${{ matrix.build.arch }}
+    - name: Download bzip2
+      if: ${{ steps.cache.outputs.cache-hit != 'true' }}
+      run: |
+        curl -O https://www.sourceware.org/pub/bzip2/bzip2-latest.tar.gz
+        tar -xzf bzip2-latest.tar.gz
+    - name: Build bzip2
+      if: ${{ steps.cache.outputs.cache-hit != 'true' }}
+      working-directory: bzip2-latest
+      run: >
+        make install
+        PREFIX="${{ github.workspace }}/install/bz2"
+        CC="xcrun --sdk ${{ matrix.build.sdk }} clang -target ${{ matrix.build.host }}"
+        CFLAGS="--sysroot=$(xcrun --sdk ${{ matrix.build.sdk }} --show-sdk-path) -mios-version-min=${{ needs.fetch.outputs.ios }}"
+        LDFLAGS="-isysroot $(xcrun --sdk ${{ matrix.build.sdk }} --show-sdk-path) -mios-version-min=${{ needs.fetch.outputs.ios }}"
+    - name: Upload the bzip2 artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: tmp-bz2-${{ matrix.build.sdk }}-${{ matrix.build.arch }}
+        path: ${{ github.workspace }}/install/bz2
+        if-no-files-found: error
+        retention-days: 1
+
+  build-ffi:
+    name: Build libffi
+    needs: fetch
+    runs-on: macos-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        build:
+          - target: 'iphoneos.arm64'
+            sdk: 'iphoneos'
+            arch: 'arm64'
+            host: 'arm64-apple-ios${{ needs.fetch.outputs.ios }}'
+          - target: 'iphonesimulator.arm64'
+            sdk: 'iphonesimulator'
+            arch: 'arm64'
+            host: 'arm64-apple-ios${{ needs.fetch.outputs.ios }}-simulator'
+          - target: 'iphonesimulator.x86_64'
+            sdk: 'iphonesimulator'
+            arch: 'x86_64'
+            host: 'x86_64-apple-ios${{ needs.fetch.outputs.ios }}-simulator'
+
+    steps:
+    - name: Checkout ${{ github.repository }}
+      uses: actions/checkout@v4
+    - name: Cache bzip2
+      id: cache
+      uses: actions/cache@v4
+      with:
+        path: ${{ github.workspace }}/install/ffi
+        key: bz2-${{ matrix.build.sdk }}-${{ matrix.build.arch }}
+    - name: Download libffi source
+      if: ${{ steps.cache.outputs.cache-hit != 'true' }}
+      run: >
+        gh release
+        -R libffi/libffi
+        download v${{ needs.fetch.outputs.ffi }}
+        -p libffi-${{ needs.fetch.outputs.ffi }}.tar.gz
+      env:
+        GH_TOKEN: ${{ github.token }}
+    - name: Extract libffi tarball
+      if: ${{ steps.cache.outputs.cache-hit != 'true' }}
+      run: tar -xzf libffi-${{ needs.fetch.outputs.ffi }}.tar.gz
+    - name: Configure libffi build
+      if: ${{ steps.cache.outputs.cache-hit != 'true' }}
+      working-directory: libffi-${{ needs.fetch.outputs.ffi }}
+      run: >
+        ./configure
+        --prefix="${{ github.workspace }}/install/ffi"
+        CC="xcrun --sdk ${{ matrix.build.sdk }} clang -target ${{ matrix.build.host }}"
+        CFLAGS="--sysroot=$(xcrun --sdk ${{ matrix.build.sdk }} --show-sdk-path) -mios-version-min=${{ needs.fetch.outputs.ios }}"
+        LDFLAGS="-isysroot $(xcrun --sdk ${{ matrix.build.sdk }} --show-sdk-path) -mios-version-min=${{ needs.fetch.outputs.ios }}"
+    - name: Upload the libffi artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: tmp-ffi-${{ matrix.build.sdk }}-${{ matrix.build.arch }}
+        path: ${{ github.workspace }}/install/ffi
+        if-no-files-found: error
+        retention-days: 1
+
+  build-xz:
+    name: Build XZ Utils
+    needs: fetch
+    runs-on: macos-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        build:
+          - target: 'iphoneos.arm64'
+            sdk: 'iphoneos'
+            arch: 'arm64'
+            host: 'arm64-apple-ios${{ needs.fetch.outputs.ios }}'
+          - target: 'iphonesimulator.arm64'
+            sdk: 'iphonesimulator'
+            arch: 'arm64'
+            host: 'arm64-apple-ios${{ needs.fetch.outputs.ios }}-simulator'
+          - target: 'iphonesimulator.x86_64'
+            sdk: 'iphonesimulator'
+            arch: 'x86_64'
+            host: 'x86_64-apple-ios${{ needs.fetch.outputs.ios }}-simulator'
+
+    steps:
+    - name: Checkout ${{ github.repository }}
+      uses: actions/checkout@v4
+    - name: Cache XZ Utils
+      id: cache
+      uses: actions/cache@v4
+      with:
+        path: ${{ github.workspace }}/install/xz
+        key: xz-${{ matrix.build.sdk }}-${{ matrix.build.arch }}
+    - name: Download XZ Utils source
+      if: ${{ steps.cache.outputs.cache-hit != 'true' }}
+      run: |
+        gh release
+        -R tukaani-project/xz
+        download v${{ needs.fetch.outputs.xz }}
+        -p xz-${{ needs.fetch.outputs.xz }}.tar.gz
+      env:
+        GH_TOKEN: ${{ github.token }}
+    - name: Extract XZ Utils tarball
+      run: tar -xzf xz-${{ needs.fetch.outputs.xz }}.tar.gz
+    - name: Configure XZ Utils build
+      if: ${{ steps.cache.outputs.cache-hit != 'true' }}
+      working-directory: xz-${{ needs.fetch.outputs.xz }}
+      run: >
+        ./configure
+        CC="xcrun --sdk ${{ matrix.build.sdk }} clang -target ${{ matrix.build.host }}"
+        CFLAGS="--sysroot=$(xcrun --sdk ${{ matrix.build.sdk }} --show-sdk-path) -mios-version-min=${{ needs.fetch.outputs.ffi }}"
+        --disable-shared
+        --enable-static
+        --host=${{ matrix.build.host }}
+        --build=arm64-apple-darwin
+        --prefix="${{ github.workspace }}/install/xz"
+    - name: Build XZ Utils
+      if: ${{ steps.cache.outputs.cache-hit != 'true' }}
+      working-directory: xz-${{ needs.fetch.outputs.xz }}
+      run: |
+        make
+        make install
+    - name: Upload the XZ Utils artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: tmp-xz-${{ matrix.build.sdk }}-${{ matrix.build.arch }}
+        path: ${{ github.workspace }}/install/xz
+        if-no-files-found: error
+        retention-days: 1
+
+  build-python:
+    name: Build Python
+    needs: [build-bz2, build-ffi, build-xz]
     runs-on: macos-latest
 
     strategy:
@@ -70,50 +253,18 @@ jobs:
       id: pyver
       run: |
         echo "py=$(python -V | cut -wf 2)" >> $GITHUB_OUTPUT
-
-    - name: Download bzip2
-      run: |
-        curl -O https://www.sourceware.org/pub/bzip2/bzip2-latest.tar.gz
-        tar -xzf bzip2-latest.tar.gz
-
-    - name: Cache XZ Utils
-      id: cache-xz
-      uses: actions/cache@v4
-      with:
-        path: ${{ github.workspace }}/install/xz
-        key: xz-${{ matrix.build.sdk }}-${{ matrix.build.arch }}
-    - name: Download XZ Utils
-      if: ${{ steps.cache-xz.outputs.cache-hit != 'true' }}
-      run: |
-        gh release download v${{ needs.fetch.outputs.xz }} -R tukaani-project/xz -p xz-${{ needs.fetch.outputs.xz }}.tar.gz
-        tar -xzf xz-${{ needs.fetch.outputs.xz }}.tar.gz
-      env:
-        GH_TOKEN: ${{ github.token }}
-    - name: Configure XZ Utils Build
-      if: ${{ steps.cache-xz.outputs.cache-hit != 'true' }}
-      working-directory: xz-${{ needs.fetch.outputs.xz }}
-      run: >
-        ./configure
-        CC="xcrun --sdk ${{ matrix.build.sdk }} clang -target ${{ matrix.build.host }}"
-        CFLAGS="--sysroot=$(xcrun --sdk ${{ matrix.build.sdk }} --show-sdk-path) -mios-version-min=13.0"
-        --disable-shared
-        --enable-static
-        --host=${{ matrix.build.host }}
-        --build=arm64-apple-darwin
-        --prefix="${{ github.workspace }}/install/xz"
-    - name: Build XZ Utils
-      if: ${{ steps.cache-xz.outputs.cache-hit != 'true' }}
-      working-directory: xz-${{ needs.fetch.outputs.xz }}
-      run: |
-        make
-        make install
-
     - name: Clone python/cpython ${{ matrix.python-version }}
       run: >
         gh repo clone python/cpython
         -- -b v${{ steps.pyver.outputs.py }} --depth=1
       env:
         GH_TOKEN: ${{ github.token }}
+    - name: Download the artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: ${{ github.workspace }}/install
+        pattern: tmp-*
+
     - name: Add iOS/Resources/bin to PATH
       working-directory: cpython
       run: echo "$(pwd)/iOS/Resources/bin" >> $GITHUB_PATH
