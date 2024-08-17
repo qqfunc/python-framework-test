@@ -80,7 +80,7 @@ jobs:
         --enable-static
         --host=${{ matrix.build.host }}
         --build=arm64-apple-darwin
-        --prefix=./install/
+        --prefix="${{ github.workspace }}/xz-${{ needs.fetch.outputs.xz }}/install"
     - name: Build XZ Utils
       working-directory: xz-${{ needs.fetch.outputs.xz }}
       run: |
