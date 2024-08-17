@@ -11,10 +11,30 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  fetch:
+    name: Fetch
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Get version information
+      id: ver
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const { data: xz } = await github.rest.repos.getLatestRelease({
+            owner: "tukaani-project",
+            repo: "xz",
+          })
+          console.log(xz)
+          return { xz: xz.tag_name.slice(1) }
+    - name: Show result
+      run: echo ${{ toJson(steps.ver.outputs) }}
+
   build:
     name: Build
-
+    needs: fetch
     runs-on: macos-latest
+
     strategy:
       fail-fast: false
       matrix:
@@ -27,19 +47,6 @@ jobs:
     steps:
     - name: Checkout ${{ github.repository }}
       uses: actions/checkout@v4
-    - name: Get version information
-      id: ver
-      uses: actions/github-script@v7
-      with:
-        script: |
-          const { data: xz } = github.rest.repos.getLatestRelease({
-            owner: "tukaani-project",
-            repo: "xz",
-          })
-          console.log(xz)
-          return { xz: xz.tag_name.slice(1) }
-    - name: Show result
-      run: echo ${{ toJson(steps.ver.outputs) }}
     - name: Set up Python ${{ matrix.python-version }}
       id: py
       uses: actions/setup-python@v5
