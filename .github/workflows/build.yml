@@ -68,13 +68,16 @@ jobs:
         path: ${{ github.workspace }}/install/bz2
         key: bz2-${{ matrix.build.sdk }}-${{ matrix.build.arch }}
     - name: Download bzip2
+      id: dl
       if: ${{ steps.cache.outputs.cache-hit != 'true' }}
       run: |
         curl -O https://www.sourceware.org/pub/bzip2/bzip2-latest.tar.gz
         tar -xzf bzip2-latest.tar.gz
+        echo "ver=$(ls bzip2-* | cut -d- -f2 | head -n1)" >> $GITHUB_OUTPUT
+        echo "dir=$(ls bzip2-* | head -n1)" >> $GITHUB_OUTPUT
     - name: Build bzip2
       if: ${{ steps.cache.outputs.cache-hit != 'true' }}
-      working-directory: bzip2-latest
+      working-directory: ${{ steps.dl.outputs.dir }}
       run: >
         make install
         PREFIX="${{ github.workspace }}/install/bz2"
