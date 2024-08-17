@@ -80,7 +80,7 @@ jobs:
         --enable-static
         --host=${{ matrix.build.host }}
         --build=arm64-apple-darwin
-        --prefix="${{ github.workspace }}/xz-${{ needs.fetch.outputs.xz }}/install"
+        --prefix="${{ github.workspace }}/install/xz"
     - name: Build XZ Utils
       working-directory: xz-${{ needs.fetch.outputs.xz }}
       run: |
@@ -100,8 +100,8 @@ jobs:
       working-directory: cpython
       run: >
         ./configure
-        LIBLZMA_CFLAGS="-I../xz-{{ needs.fetch.outputs.xz }}/install/include"
-        LIBLZMA_LIBS="-L../xz-{{ needs.fetch.outputs.xz }}/install/lib -llzma"
+        LIBLZMA_CFLAGS="-I${{ github.workspace }}/install/xz/include"
+        LIBLZMA_LIBS="-L${{ github.workspace }}/install/xz/lib -llzma"
         --enable-framework="./iOS/Frameworks/main/"
         --host=${{ matrix.build.host }}
         --build=arm64-apple-darwin
