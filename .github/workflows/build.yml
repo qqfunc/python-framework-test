@@ -15,6 +15,9 @@ jobs:
     name: Fetch
     runs-on: ubuntu-latest
 
+    outputs:
+      xz: ${{ fromJson(steps.ver.outputs.result).xz }}
+
     steps:
     - name: Get version information
       id: ver
@@ -25,10 +28,7 @@ jobs:
             owner: "tukaani-project",
             repo: "xz",
           })
-          console.log(xz)
           return { xz: xz.tag_name.slice(1) }
-    - name: Show result
-      run: echo ${{ toJson(steps.ver.outputs) }}
 
   build:
     name: Build
@@ -39,10 +39,16 @@ jobs:
       fail-fast: false
       matrix:
         python-version: ['3.13-dev']
-        build-host: 
-          - 'arm64-apple-ios'
-          - 'arm64-apple-ios-simulator'
-          - 'x86_64-apple-ios-simulator'
+        build:
+          - target: 'iphoneos.arm64'
+            sdk: 'iphoneos'
+            host: 'arm64-apple-ios'
+          - target: 'iphonesimulator.arm64'
+            sdk: 'iphonesimulator'
+            host: 'arm64-apple-ios-simulator'
+          - target: 'iphonesimulator.x86_64'
+            sdk: 'iphonesimulator'
+            host: 'x86_64-apple-ios-simulator'
 
     steps:
     - name: Checkout ${{ github.repository }}
@@ -57,14 +63,35 @@ jobs:
       id: pyver
       run: |
         echo "py=$(python -V | cut -wf 2)" >> $GITHUB_OUTPUT
+
+    - name: Download XZ Utils
+      run: >
+        gh release download v${{ needs.fetch.outputs.xz }}
+        -R tukaani-project/xz
+        -p xz-${{ needs.fetch.outputs.xz }}.tar.gz
+    - name: Configure XZ Utils Build
+      working-directory: xz-${{ needs.fetch.outputs.xz }}
+      run: >
+        ./configure
+        CC="xcrun --sdk ${{ matrix.build.sdk }} clang -target ${{ matrix.build.host }}"
+        CFLAGS="--sysroot=$(xcrun --sdk ${{ matrix.build.sdk }} --show-sdk-path) -mios-version-min=13.0"
+        --disable-shared
+        --enable-static
+        --host=${{ matrix.build.host }}
+        --build=arm64-apple-darwin
+        --prefix=./install/
+    - name: Build XZ Utils
+      working-directory: xz-${{ needs.fetch.outputs.xz }}
+      run: |
+        make
+        make install
+
     - name: Clone python/cpython ${{ matrix.python-version }}
       run: >
         gh repo clone python/cpython
         -- -b v${{ steps.pyver.outputs.py }} --depth=1
       env:
         GH_TOKEN: ${{ github.token }}
-    - name: Download XZ Utils
-      run: gh release download -R tukaani-project/xz -p xz-*.tar.gz
     - name: Add iOS/Resources/bin to PATH
       working-directory: cpython
       run: echo "$(pwd)/iOS/Resources/bin" >> $GITHUB_PATH
@@ -72,8 +99,10 @@ jobs:
       working-directory: cpython
       run: >
         ./configure
+        LIBLZMA_CFLAGS="-I../xz-{{ needs.fetch.outputs.xz }}/install/include"
+        LIBLZMA_LIBS="-L../xz-{{ needs.fetch.outputs.xz }}/install/lib -llzma"
         --enable-framework="./iOS/Frameworks/main/"
-        --host=${{ matrix.build-host }}
+        --host=${{ matrix.build.host }}
         --build=arm64-apple-darwin
         --with-build-python="${{ steps.py.outputs.python-path }}"
     - name: Build Python.framework
