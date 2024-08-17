@@ -36,6 +36,7 @@ jobs:
             owner: "tukaani-project",
             repo: "xz",
           })
+          console.log(xz)
           return { xz: xz.tag_name.slice(1) }
     - name: Show result
       run: echo ${{ toJson(steps.ver.outputs) }}
