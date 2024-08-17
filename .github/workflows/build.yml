@@ -65,12 +65,9 @@ jobs:
         echo "py=$(python -V | cut -wf 2)" >> $GITHUB_OUTPUT
 
     - name: Download XZ Utils
-      run: >
-        gh release download v${{ needs.fetch.outputs.xz }}
-        -R tukaani-project/xz
-        -p xz-${{ needs.fetch.outputs.xz }}.tar.gz
-      env:
-        GH_TOKEN: ${{ github.token }}
+      run: |
+        gh release download v${{ needs.fetch.outputs.xz }} -R tukaani-project/xz -p xz-${{ needs.fetch.outputs.xz }}.tar.gz
+        tar -xzf xz-${{ needs.fetch.outputs.xz }}.tar.gz
     - name: Configure XZ Utils Build
       working-directory: xz-${{ needs.fetch.outputs.xz }}
       run: >
