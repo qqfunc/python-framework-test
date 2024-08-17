@@ -46,12 +46,15 @@ jobs:
         build:
           - target: 'iphoneos.arm64'
             sdk: 'iphoneos'
+            arch: 'arm64'
             host: 'arm64-apple-ios'
           - target: 'iphonesimulator.arm64'
             sdk: 'iphonesimulator'
+            arch: 'arm64'
             host: 'arm64-apple-ios-simulator'
           - target: 'iphonesimulator.x86_64'
             sdk: 'iphonesimulator'
+            arch: 'x86_64'
             host: 'x86_64-apple-ios-simulator'
 
     steps:
@@ -73,13 +76,21 @@ jobs:
         curl -O https://www.sourceware.org/pub/bzip2/bzip2-latest.tar.gz
         tar -xzf bzip2-latest.tar.gz
 
+    - name: Cache XZ Utils
+      id: cache-xz
+      uses: actions/cache@v4
+      with:
+        path: ${{ github.workspace }}/install/xz
+        key: xz-${{ matrix.build.sdk }}-${{ matrix.build.arch }}
     - name: Download XZ Utils
+      if: ${{ steps.cache-xz.outputs.cache-hit != 'true' }}
       run: |
         gh release download v${{ needs.fetch.outputs.xz }} -R tukaani-project/xz -p xz-${{ needs.fetch.outputs.xz }}.tar.gz
         tar -xzf xz-${{ needs.fetch.outputs.xz }}.tar.gz
       env:
         GH_TOKEN: ${{ github.token }}
     - name: Configure XZ Utils Build
+      if: ${{ steps.cache-xz.outputs.cache-hit != 'true' }}
       working-directory: xz-${{ needs.fetch.outputs.xz }}
       run: >
         ./configure
@@ -91,6 +102,7 @@ jobs:
         --build=arm64-apple-darwin
         --prefix="${{ github.workspace }}/install/xz"
     - name: Build XZ Utils
+      if: ${{ steps.cache-xz.outputs.cache-hit != 'true' }}
       working-directory: xz-${{ needs.fetch.outputs.xz }}
       run: |
         make
