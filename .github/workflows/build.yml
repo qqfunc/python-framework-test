@@ -24,11 +24,15 @@ jobs:
       uses: actions/github-script@v7
       with:
         script: |
+          const { data: ffi } =  await github.rest.repos.getLatestRelease({
+            owner: "libffi",
+            repo: "libffi",
+          })
           const { data: xz } = await github.rest.repos.getLatestRelease({
             owner: "tukaani-project",
             repo: "xz",
           })
-          return { xz: xz.tag_name.slice(1) }
+          return { ffi: ffi.tag_name.slice(1), xz: xz.tag_name.slice(1) }
 
   build:
     name: Build
@@ -63,6 +67,11 @@ jobs:
       id: pyver
       run: |
         echo "py=$(python -V | cut -wf 2)" >> $GITHUB_OUTPUT
+
+    - name: Download bzip2
+      run: |
+        curl -O https://www.sourceware.org/pub/bzip2/bzip2-latest.tar.gz
+        tar -xzf bzip2-latest.tar.gz
 
     - name: Download XZ Utils
       run: |
