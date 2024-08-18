@@ -292,6 +292,7 @@ jobs:
         LIBLZMA_CFLAGS="-I${{ github.workspace }}/install/xz-${{ matrix.build.sdk }}-${{ matrix.build.arch }}/include"
         LIBLZMA_LIBS="-L${{ github.workspace }}/install/xz-${{ matrix.build.sdk }}-${{ matrix.build.arch }}/lib -llzma"
         --enable-framework="${{ github.workspace }}/framework"
+        --build=$(uname -m)-apple-darwin
         --host=${{ matrix.build.host }}
         --with-build-python="${{ steps.py.outputs.python-path }}"
     - name: Build Python.framework
