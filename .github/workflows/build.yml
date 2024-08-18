@@ -231,8 +231,8 @@ jobs:
         if-no-files-found: error
         retention-days: 1
 
-  build-python:
-    name: Build Python
+  build-python-framework:
+    name: Build Python.framework
     needs: [build-bz2, build-ffi, build-xz]
     runs-on: macos-latest
 
@@ -293,14 +293,13 @@ jobs:
         LIBLZMA_LIBS="-L${{ github.workspace }}/install/xz-${{ matrix.build.sdk }}-${{ matrix.build.arch }}/lib -llzma"
         --enable-framework="${{ github.workspace }}/framework"
         --host=${{ matrix.build.host }}
-        --build=arm64-apple-darwin
         --with-build-python="${{ steps.py.outputs.python-path }}"
     - name: Build Python.framework
       working-directory: cpython
       run: |
         make
         make install
-    - name: Upload Python.framewrok.tar.gz
+    - name: Upload Python.framework
       uses: actions/upload-artifact@v4
       with:
         name: cp${{ steps.py.outputs.python-version }}-${{ matrix.build.sdk }}-${{ matrix.build.arch }}
