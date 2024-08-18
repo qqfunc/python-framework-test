@@ -291,7 +291,7 @@ jobs:
         LIBFFI_LIBS="-L${{ github.workspace }}/install/ffi-${{ matrix.build.sdk }}-${{ matrix.build.arch }}/lib -lffi"
         LIBLZMA_CFLAGS="-I${{ github.workspace }}/install/xz-${{ matrix.build.sdk }}-${{ matrix.build.arch }}/include"
         LIBLZMA_LIBS="-L${{ github.workspace }}/install/xz-${{ matrix.build.sdk }}-${{ matrix.build.arch }}/lib -llzma"
-        --enable-framework="./iOS/Frameworks/main/"
+        --enable-framework="${{ github.workspace }}/framework"
         --host=${{ matrix.build.host }}
         --build=arm64-apple-darwin
         --with-build-python="${{ steps.py.outputs.python-path }}"
@@ -301,8 +301,12 @@ jobs:
         make
         make install
     - name: Create an archive
-      working-directory: cpython
-      run: >
-        tar -czf
-        ./iOS/Frameworks/dist/Python.framework.tar.gz
-        ./iOS/Frameworks/dist/Python.framework
+      working-directory: framework
+      run: tar -czf Python.framework.tar.gz Python.framework
+    - name: Upload Python.framewrok.tar.gz
+      uses: actions/upload-artifact@v4
+      with:
+        name: cp${{ steps.py.outputs.python-version }}-${{ matrix.build.sdk }}-${{ matrix.build.arch }}
+        path: ${{ github.workspace }}/framework/Python.framework.tar.gz
+        if-no-files-found: error
+        retention-days: 1
