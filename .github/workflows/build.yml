@@ -85,7 +85,7 @@ jobs:
     - name: Upload the bzip2 artifact
       uses: actions/upload-artifact@v4
       with:
-        name: tmp-bz2-${{ matrix.build.sdk }}-${{ matrix.build.arch }}
+        name: bz2-${{ matrix.build.sdk }}-${{ matrix.build.arch }}
         path: ${{ github.workspace }}/install/bz2
         if-no-files-found: error
         retention-days: 1
@@ -152,7 +152,7 @@ jobs:
     - name: Upload the libffi artifact
       uses: actions/upload-artifact@v4
       with:
-        name: tmp-ffi-${{ matrix.build.sdk }}-${{ matrix.build.arch }}
+        name: ffi-${{ matrix.build.sdk }}-${{ matrix.build.arch }}
         path: ${{ github.workspace }}/install/ffi
         if-no-files-found: error
         retention-days: 1
@@ -226,7 +226,7 @@ jobs:
     - name: Upload the XZ Utils artifact
       uses: actions/upload-artifact@v4
       with:
-        name: tmp-xz-${{ matrix.build.sdk }}-${{ matrix.build.arch }}
+        name: xz-${{ matrix.build.sdk }}-${{ matrix.build.arch }}
         path: ${{ github.workspace }}/install/xz
         if-no-files-found: error
         retention-days: 1
@@ -273,21 +273,11 @@ jobs:
         -- -b v${{ steps.pyver.outputs.py }} --depth=1
       env:
         GH_TOKEN: ${{ github.token }}
-    - name: Download the bzip2 artifact
+    - name: Download artifacts
       uses: actions/download-artifact@v4
       with:
-        path: ${{ github.workspace }}/install/bz2
-        pattern: tmp-bz2-${{ matrix.build.sdk }}-${{ matrix.build.arch }}
-    - name: Download the libffi artifact
-      uses: actions/download-artifact@v4
-      with:
-        path: ${{ github.workspace }}/install/ffi
-        pattern: tmp-ffi-${{ matrix.build.sdk }}-${{ matrix.build.arch }}
-    - name: Download the XZ Utils artifact
-      uses: actions/download-artifact@v4
-      with:
-        path: ${{ github.workspace }}/install/xz
-        pattern: tmp-xz-${{ matrix.build.sdk }}-${{ matrix.build.arch }}
+        path: ${{ github.workspace }}/install
+        pattern: '*-${{ matrix.build.sdk }}-${{ matrix.build.arch }}'
     - name: Add iOS/Resources/bin to PATH
       working-directory: cpython
       run: echo "$(pwd)/iOS/Resources/bin" >> $GITHUB_PATH
@@ -295,12 +285,12 @@ jobs:
       working-directory: cpython
       run: >
         ./configure
-        BZIP2_CFLAGS="-I${{ github.workspace }}/install/bz2/include"
-        BZIP2_LIBS="-L${{ github.workspace }}/install/bz2/lib -lbz2"
-        LIBFFI_CFLAGS="-I${{ github.workspace }}/install/ffi/include"
-        LIBFFI_LIBS="-L${{ github.workspace }}/install/ffi/lib -lffi"
-        LIBLZMA_CFLAGS="-I${{ github.workspace }}/install/xz/include"
-        LIBLZMA_LIBS="-L${{ github.workspace }}/install/xz/lib -llzma"
+        BZIP2_CFLAGS="-I${{ github.workspace }}/install/bz2-${{ matrix.build.sdk }}-${{ matrix.build.arch }}/include"
+        BZIP2_LIBS="-L${{ github.workspace }}/install/bz2-${{ matrix.build.sdk }}-${{ matrix.build.arch }}/lib -lbz2"
+        LIBFFI_CFLAGS="-I${{ github.workspace }}/install/ffi-${{ matrix.build.sdk }}-${{ matrix.build.arch }}/include"
+        LIBFFI_LIBS="-L${{ github.workspace }}/install/ffi-${{ matrix.build.sdk }}-${{ matrix.build.arch }}/lib -lffi"
+        LIBLZMA_CFLAGS="-I${{ github.workspace }}/install/xz-${{ matrix.build.sdk }}-${{ matrix.build.arch }}/include"
+        LIBLZMA_LIBS="-L${{ github.workspace }}/install/xz-${{ matrix.build.sdk }}-${{ matrix.build.arch }}/lib -llzma"
         --enable-framework="./iOS/Frameworks/main/"
         --host=${{ matrix.build.host }}
         --build=arm64-apple-darwin
