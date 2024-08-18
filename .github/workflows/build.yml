@@ -143,6 +143,12 @@ jobs:
         CC="xcrun --sdk ${{ matrix.build.sdk }} clang -target ${{ matrix.build.host }}"
         CFLAGS="--sysroot=$(xcrun --sdk ${{ matrix.build.sdk }} --show-sdk-path) -mios-version-min=${{ needs.fetch.outputs.ios }}"
         LDFLAGS="-isysroot $(xcrun --sdk ${{ matrix.build.sdk }} --show-sdk-path) -mios-version-min=${{ needs.fetch.outputs.ios }}"
+    - name: Build libffi
+      if: ${{ steps.cache.outputs.cache-hit != 'true' }}
+      working-directory: libffi-${{ needs.fetch.outputs.ffi }}
+      run: |
+        make
+        make install
     - name: Upload the libffi artifact
       uses: actions/upload-artifact@v4
       with:
@@ -192,6 +198,7 @@ jobs:
       env:
         GH_TOKEN: ${{ github.token }}
     - name: Extract XZ Utils tarball
+      if: ${{ steps.cache.outputs.cache-hit != 'true' }}
       run: tar -xzf xz-${{ needs.fetch.outputs.xz }}.tar.gz
     - name: Configure XZ Utils build
       if: ${{ steps.cache.outputs.cache-hit != 'true' }}
@@ -261,12 +268,21 @@ jobs:
         -- -b v${{ steps.pyver.outputs.py }} --depth=1
       env:
         GH_TOKEN: ${{ github.token }}
-    - name: Download the artifacts
+    - name: Download the bzip2 artifact
       uses: actions/download-artifact@v4
       with:
-        path: ${{ github.workspace }}/install
-        pattern: tmp-*
-
+        path: ${{ github.workspace }}/install/bz2
+        pattern: tmp-bz2-${{ matrix.build.sdk }}-${{ matrix.build.arch }}
+    - name: Download the libffi artifact
+      uses: actions/download-artifact@v4
+      with:
+        path: ${{ github.workspace }}/install/ffi
+        pattern: tmp-ffi-${{ matrix.build.sdk }}-${{ matrix.build.arch }}
+    - name: Download the XZ Utils artifact
+      uses: actions/download-artifact@v4
+      with:
+        path: ${{ github.workspace }}/install/xz
+        pattern: tmp-xz-${{ matrix.build.sdk }}-${{ matrix.build.arch }}
     - name: Add iOS/Resources/bin to PATH
       working-directory: cpython
       run: echo "$(pwd)/iOS/Resources/bin" >> $GITHUB_PATH
@@ -274,6 +290,10 @@ jobs:
       working-directory: cpython
       run: >
         ./configure
+        BZIP2_CFLAGS="-I${{ github.workspace }}/install/bz2/include"
+        BZIP2_LIBS="-L${{ github.workspace }}/install/bz2/lib -lbz2"
+        LIBFFI_CFLAGS="-I${{ github.workspace }}/install/ffi/include"
+        LIBFFI_LIBS="-L${{ github.workspace }}/install/ffi/lib -lffi"
         LIBLZMA_CFLAGS="-I${{ github.workspace }}/install/xz/include"
         LIBLZMA_LIBS="-L${{ github.workspace }}/install/xz/lib -llzma"
         --enable-framework="./iOS/Frameworks/main/"
