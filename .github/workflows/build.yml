@@ -300,13 +300,10 @@ jobs:
       run: |
         make
         make install
-    - name: Create an archive
-      working-directory: framework
-      run: tar -czf Python.framework.tar.gz Python.framework
     - name: Upload Python.framewrok.tar.gz
       uses: actions/upload-artifact@v4
       with:
         name: cp${{ steps.py.outputs.python-version }}-${{ matrix.build.sdk }}-${{ matrix.build.arch }}
-        path: ${{ github.workspace }}/framework/Python.framework.tar.gz
+        path: ${{ github.workspace }}/framework
         if-no-files-found: error
         retention-days: 1
