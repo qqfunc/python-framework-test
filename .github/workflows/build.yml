@@ -205,13 +205,13 @@ jobs:
       working-directory: xz-${{ needs.fetch.outputs.xz }}
       run: >
         ./configure
-        CC="xcrun --sdk ${{ matrix.build.sdk }} clang -target ${{ matrix.build.host }}"
-        CFLAGS="--sysroot=$(xcrun --sdk ${{ matrix.build.sdk }} --show-sdk-path) -mios-version-min=${{ needs.fetch.outputs.ffi }}"
+        --prefix="${{ github.workspace }}/install/xz"
+        --host=${{ matrix.build.host }}
         --disable-shared
         --enable-static
-        --host=${{ matrix.build.host }}
-        --build=arm64-apple-darwin
-        --prefix="${{ github.workspace }}/install/xz"
+        CC="xcrun --sdk ${{ matrix.build.sdk }} clang -target ${{ matrix.build.host }}"
+        CFLAGS="--sysroot=$(xcrun --sdk ${{ matrix.build.sdk }} --show-sdk-path) -mios-version-min=${{ needs.fetch.outputs.ios }}"
+        LDFLAGS="-isysroot $(xcrun --sdk ${{ matrix.build.sdk }} --show-sdk-path) -mios-version-min=${{ needs.fetch.outputs.ios }}"
     - name: Build XZ Utils
       if: ${{ steps.cache.outputs.cache-hit != 'true' }}
       working-directory: xz-${{ needs.fetch.outputs.xz }}
