@@ -254,9 +254,6 @@ jobs:
             arch: 'x86_64'
             host: 'x86_64-apple-ios-simulator'
 
-    outputs:
-      python-version: ${{ steps.py.python-version }}
-
     steps:
     - name: Checkout ${{ github.repository }}
       uses: actions/checkout@v4
@@ -306,7 +303,7 @@ jobs:
     - name: Upload Python.framework
       uses: actions/upload-artifact@v4
       with:
-        name: cp${{ steps.py.outputs.python-version }}-${{ matrix.build.sdk }}-${{ matrix.build.arch }}
+        name: cp${{ matrix.python-version }}-${{ matrix.build.sdk }}-${{ matrix.build.arch }}
         path: ${{ github.workspace }}/framework
         if-no-files-found: error
         retention-days: 1
