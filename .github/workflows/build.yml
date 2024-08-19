@@ -254,6 +254,9 @@ jobs:
             arch: 'x86_64'
             host: 'x86_64-apple-ios-simulator'
 
+    outputs:
+      python-version: ${{ steps.py.python-version }}
+
     steps:
     - name: Checkout ${{ github.repository }}
       uses: actions/checkout@v4
@@ -281,7 +284,7 @@ jobs:
     - name: Add iOS/Resources/bin to PATH
       working-directory: cpython
       run: echo "$(pwd)/iOS/Resources/bin" >> $GITHUB_PATH
-    - name: Configure
+    - name: Configure Python build
       working-directory: cpython
       run: >
         ./configure
@@ -307,3 +310,31 @@ jobs:
         path: ${{ github.workspace }}/framework
         if-no-files-found: error
         retention-days: 1
+
+  build-python-xcframework:
+    name: Build Python.xcframework
+    needs: build-python-framework
+    runs-on: macos-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.13-dev']
+        build:
+          - target: 'iphoneos.arm64'
+            sdk: 'iphoneos'
+            arch: 'arm64'
+            host: 'arm64-apple-ios'
+          - target: 'iphonesimulator.arm64'
+            sdk: 'iphonesimulator'
+            arch: 'arm64'
+            host: 'arm64-apple-ios-simulator'
+          - target: 'iphonesimulator.x86_64'
+            sdk: 'iphonesimulator'
+            arch: 'x86_64'
+            host: 'x86_64-apple-ios-simulator'
+
+    steps:
+    - name: Checkout ${{ github.repository }}
+      uses: actions/checkout@v4
+    
