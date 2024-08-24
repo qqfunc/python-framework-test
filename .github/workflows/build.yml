@@ -16,7 +16,6 @@ jobs:
     runs-on: ubuntu-latest
 
     outputs:
-      cc: ${{ steps.info.outputs.cc }}
       ios: ${{ steps.info.outputs.ios }}
       bz2: ${{ steps.ver.outputs.bz2 }}
       ffi: ${{ steps.ver.outputs.ffi }}
@@ -26,14 +25,13 @@ jobs:
     - name: Get build information from build.toml
       id: info
       run: |
-        echo "cc=$(yq .build.cc build.toml)" >> $GITHUB_OUTPUT
         echo "ios=$(yq .build.ios build.toml)" >> $GITHUB_OUTPUT
     - name: Get library version information from build.toml
       id: ver
       run: |
-        echo "bz2=$(yq .lib build.toml)" >> $GITHUB_OUTPUT
-        echo "ffi=$(yq .lib build.toml)" >> $GITHUB_OUTPUT
-        echo "xz=$(yq .lib build.toml)" >> $GITHUB_OUTPUT
+        echo "bz2=$(yq .lib.bz2 build.toml)" >> $GITHUB_OUTPUT
+        echo "ffi=$(yq .lib.ffi build.toml)" >> $GITHUB_OUTPUT
+        echo "xz=$(yq .lib.xz build.toml)" >> $GITHUB_OUTPUT
 
   build-bz2:
     name: Build bzip2
@@ -62,7 +60,7 @@ jobs:
     - name: Download bzip2 source
       run: |
         curl -O https://www.sourceware.org/pub/bzip2/bzip2-${{ needs.fetch.outputs.bz2 }}.tar.gz
-        tar -xzf bzip2-${{ needs.fetch.outputs.bz2 }}.tar.gz
+        tar -xf bzip2-${{ needs.fetch.outputs.bz2 }}.tar.gz
     - name: Build bzip2
       working-directory: bzip2-${{ needs.fetch.outputs.bz2 }}
       run: >

@@ -1,5 +1,4 @@
 [build]
-cc = "sccache xcrun --sdk %s clang -target %s"
 ios = "13.0"
 
 [lib]
