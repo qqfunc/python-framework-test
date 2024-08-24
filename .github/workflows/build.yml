@@ -234,15 +234,9 @@ jobs:
       matrix:
         python-version: ['3.13-dev']
         build:
-          - target: 'iphoneos.arm64'
-            sdk: 'iphoneos'
-            host: 'arm64-apple-ios${{ needs.fetch.outputs.ios }}'
-          - target: 'iphonesimulator.arm64'
-            sdk: 'iphonesimulator'
-            host: 'arm64-apple-ios${{ needs.fetch.outputs.ios }}-simulator'
-          - target: 'iphonesimulator.x86_64'
-            sdk: 'iphonesimulator'
-            host: 'x86_64-apple-ios${{ needs.fetch.outputs.ios }}-simulator'
+          - host: 'arm64-apple-ios${{ needs.fetch.outputs.ios }}'
+          - host: 'arm64-apple-ios${{ needs.fetch.outputs.ios }}-simulator'
+          - host: 'x86_64-apple-ios${{ needs.fetch.outputs.ios }}-simulator'
 
     steps:
     - name: Checkout ${{ github.repository }}
