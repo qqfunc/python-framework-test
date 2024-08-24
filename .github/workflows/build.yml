@@ -57,8 +57,12 @@ jobs:
     steps:
     - name: Checkout ${{ github.repository }}
       uses: actions/checkout@v4
-    - name: Run sccache-cache
-      uses: mozilla-actions/sccache-action@v0.0.5
+    - name: Cache bzip2
+      id: cache
+      uses: actions/cache@v4
+      with:
+        path: ${{ github.workspace }}/install/bz2
+        key: bz2-${{ matrix.build.host }}-${{ needs.fetch.outputs.bz2 }}
     - name: Download bzip2 source
       run: |
         curl -O https://www.sourceware.org/pub/bzip2/bzip2-${{ needs.fetch.outputs.bz2 }}.tar.gz
@@ -71,8 +75,6 @@ jobs:
         CC="sccache xcrun --sdk ${{ matrix.build.sdk }} clang -target ${{ matrix.build.host }}"
         CFLAGS="--sysroot=$(xcrun --sdk ${{ matrix.build.sdk }} --show-sdk-path) -mios-version-min=${{ needs.fetch.outputs.ios }}"
         LDFLAGS="-isysroot $(xcrun --sdk ${{ matrix.build.sdk }} --show-sdk-path) -mios-version-min=${{ needs.fetch.outputs.ios }}"
-      env:
-        SCCACHE_GHA_ENABLED: 'true'
     - name: Upload the bzip2 artifact
       uses: actions/upload-artifact@v4
       with:
@@ -92,26 +94,23 @@ jobs:
         build:
           - target: 'iphoneos.arm64'
             sdk: 'iphoneos'
-            arch: 'arm64'
             host: 'arm64-apple-ios${{ needs.fetch.outputs.ios }}'
           - target: 'iphonesimulator.arm64'
             sdk: 'iphonesimulator'
-            arch: 'arm64'
             host: 'arm64-apple-ios${{ needs.fetch.outputs.ios }}-simulator'
           - target: 'iphonesimulator.x86_64'
             sdk: 'iphonesimulator'
-            arch: 'x86_64'
             host: 'x86_64-apple-ios${{ needs.fetch.outputs.ios }}-simulator'
 
     steps:
     - name: Checkout ${{ github.repository }}
       uses: actions/checkout@v4
-    - name: Cache bzip2
+    - name: Cache libffi
       id: cache
       uses: actions/cache@v4
       with:
         path: ${{ github.workspace }}/install/ffi
-        key: ffi-${{ matrix.build.sdk }}-${{ matrix.build.arch }}
+        key: ffi-${{ matrix.build.host }}-${{ needs.fetch.outputs.ffi }}
     - name: Download libffi source
       if: ${{ steps.cache.outputs.cache-hit != 'true' }}
       run: >
@@ -130,7 +129,10 @@ jobs:
       run: >
         ./configure
         --prefix="${{ github.workspace }}/install/ffi"
+        --build=$(uname -m)-apple-darwin
         --host=${{ matrix.build.host }}
+        --disable-shared
+        --enable-static
         CC="xcrun --sdk ${{ matrix.build.sdk }} clang -target ${{ matrix.build.host }}"
         CFLAGS="--sysroot=$(xcrun --sdk ${{ matrix.build.sdk }} --show-sdk-path) -mios-version-min=${{ needs.fetch.outputs.ios }}"
         LDFLAGS="-isysroot $(xcrun --sdk ${{ matrix.build.sdk }} --show-sdk-path) -mios-version-min=${{ needs.fetch.outputs.ios }}"
@@ -143,7 +145,7 @@ jobs:
     - name: Upload the libffi artifact
       uses: actions/upload-artifact@v4
       with:
-        name: ffi-${{ matrix.build.sdk }}-${{ matrix.build.arch }}
+        name: ffi-${{ matrix.build.host }}
         path: ${{ github.workspace }}/install/ffi
         if-no-files-found: error
         retention-days: 1
@@ -159,15 +161,12 @@ jobs:
         build:
           - target: 'iphoneos.arm64'
             sdk: 'iphoneos'
-            arch: 'arm64'
             host: 'arm64-apple-ios${{ needs.fetch.outputs.ios }}'
           - target: 'iphonesimulator.arm64'
             sdk: 'iphonesimulator'
-            arch: 'arm64'
             host: 'arm64-apple-ios${{ needs.fetch.outputs.ios }}-simulator'
           - target: 'iphonesimulator.x86_64'
             sdk: 'iphonesimulator'
-            arch: 'x86_64'
             host: 'x86_64-apple-ios${{ needs.fetch.outputs.ios }}-simulator'
 
     steps:
@@ -178,7 +177,7 @@ jobs:
       uses: actions/cache@v4
       with:
         path: ${{ github.workspace }}/install/xz
-        key: xz-${{ matrix.build.sdk }}-${{ matrix.build.arch }}
+        key: xz-${{ matrix.build.host }}-${{ needs.fetch.outputs.xz }}
     - name: Download XZ Utils source
       if: ${{ steps.cache.outputs.cache-hit != 'true' }}
       run: >
@@ -217,14 +216,14 @@ jobs:
     - name: Upload the XZ Utils artifact
       uses: actions/upload-artifact@v4
       with:
-        name: xz-${{ matrix.build.sdk }}-${{ matrix.build.arch }}
+        name: xz-${{ matrix.build.host }}
         path: ${{ github.workspace }}/install/xz
         if-no-files-found: error
         retention-days: 1
 
   build-python-framework:
     name: Build Python.framework
-    needs: [build-bz2, build-ffi, build-xz]
+    needs: [fetch, build-bz2, build-ffi, build-xz]
     runs-on: macos-latest
 
     strategy:
@@ -234,16 +233,13 @@ jobs:
         build:
           - target: 'iphoneos.arm64'
             sdk: 'iphoneos'
-            arch: 'arm64'
-            host: 'arm64-apple-ios'
+            host: 'arm64-apple-ios${{ needs.fetch.outputs.ios }}'
           - target: 'iphonesimulator.arm64'
             sdk: 'iphonesimulator'
-            arch: 'arm64'
-            host: 'arm64-apple-ios-simulator'
+            host: 'arm64-apple-ios${{ needs.fetch.outputs.ios }}-simulator'
           - target: 'iphonesimulator.x86_64'
             sdk: 'iphonesimulator'
-            arch: 'x86_64'
-            host: 'x86_64-apple-ios-simulator'
+            host: 'x86_64-apple-ios${{ needs.fetch.outputs.ios }}-simulator'
 
     steps:
     - name: Checkout ${{ github.repository }}
@@ -268,10 +264,10 @@ jobs:
       uses: actions/download-artifact@v4
       with:
         path: ${{ github.workspace }}/install
-        pattern: '*-${{ matrix.build.sdk }}-${{ matrix.build.arch }}'
+        pattern: '*-${{ matrix.build.host }}'
     - name: Add iOS/Resources/bin to PATH
       working-directory: cpython
-      run: echo "$(pwd)/iOS/Resources/bin" >> $GITHUB_PATH
+      run: echo "${{ github.workspace }}/cpython/iOS/Resources/bin" >> $GITHUB_PATH
     - name: Configure Python build
       working-directory: cpython
       run: >
