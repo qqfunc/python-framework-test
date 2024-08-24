@@ -16,25 +16,24 @@ jobs:
     runs-on: ubuntu-latest
 
     outputs:
-      ios: '13.0'
-      ffi: ${{ fromJson(steps.ver.outputs.result).ffi }}
-      xz: ${{ fromJson(steps.ver.outputs.result).xz }}
+      cc: ${{ steps.info.outputs.cc }}
+      ios: ${{ steps.info.outputs.ios }}
+      bz2: ${{ steps.ver.outputs.bz2 }}
+      ffi: ${{ steps.ver.outputs.ffi }}
+      xz: ${{ steps.ver.outputs.xz }}
 
     steps:
-    - name: Get version information
+    - name: Get build information from build.toml
+      id: info
+      run: |
+        echo "cc=$(yq .build.cc build.toml)" >> $GITHUB_OUTPUT
+        echo "ios=$(yq .build.ios build.toml)" >> $GITHUB_OUTPUT
+    - name: Get library version information from build.toml
       id: ver
-      uses: actions/github-script@v7
-      with:
-        script: |
-          const { data: ffi } =  await github.rest.repos.getLatestRelease({
-            owner: "libffi",
-            repo: "libffi",
-          })
-          const { data: xz } = await github.rest.repos.getLatestRelease({
-            owner: "tukaani-project",
-            repo: "xz",
-          })
-          return { ffi: ffi.tag_name.slice(1), xz: xz.tag_name.slice(1) }
+      run: |
+        echo "bz2=$(yq .lib build.toml)" >> $GITHUB_OUTPUT
+        echo "ffi=$(yq .lib build.toml)" >> $GITHUB_OUTPUT
+        echo "xz=$(yq .lib build.toml)" >> $GITHUB_OUTPUT
 
   build-bz2:
     name: Build bzip2
@@ -47,45 +46,37 @@ jobs:
         build:
           - target: 'iphoneos.arm64'
             sdk: 'iphoneos'
-            arch: 'arm64'
             host: 'arm64-apple-ios${{ needs.fetch.outputs.ios }}'
           - target: 'iphonesimulator.arm64'
             sdk: 'iphonesimulator'
-            arch: 'arm64'
             host: 'arm64-apple-ios${{ needs.fetch.outputs.ios }}-simulator'
           - target: 'iphonesimulator.x86_64'
             sdk: 'iphonesimulator'
-            arch: 'x86_64'
             host: 'x86_64-apple-ios${{ needs.fetch.outputs.ios }}-simulator'
 
     steps:
     - name: Checkout ${{ github.repository }}
       uses: actions/checkout@v4
-    - name: Cache bzip2
-      id: cache
-      uses: actions/cache@v4
-      with:
-        path: ${{ github.workspace }}/install/bz2
-        key: bz2-${{ matrix.build.sdk }}-${{ matrix.build.arch }}
+    - name: Run sccache-cache
+      uses: mozilla-actions/sccache-action@v0.0.5
     - name: Download bzip2 source
-      if: ${{ steps.cache.outputs.cache-hit != 'true' }}
       run: |
-        curl -O https://www.sourceware.org/pub/bzip2/bzip2-latest.tar.gz
-        mkdir -p ./bzip2
-        tar -xzf bzip2-latest.tar.gz -C ./bzip2 --strip-components 1
+        curl -O https://www.sourceware.org/pub/bzip2/bzip2-${{ needs.fetch.outputs.bz2 }}.tar.gz
+        tar -xf bzip2-${{ needs.fetch.outputs.bz2 }}.tar.gz
     - name: Build bzip2
-      if: ${{ steps.cache.outputs.cache-hit != 'true' }}
-      working-directory: bzip2
+      working-directory: bzip2-${{ needs.fetch.outputs.bz2 }}
       run: >
         make install
         PREFIX="${{ github.workspace }}/install/bz2"
-        CC="xcrun --sdk ${{ matrix.build.sdk }} clang -target ${{ matrix.build.host }}"
+        CC="sccache xcrun --sdk ${{ matrix.build.sdk }} clang -target ${{ matrix.build.host }}"
         CFLAGS="--sysroot=$(xcrun --sdk ${{ matrix.build.sdk }} --show-sdk-path) -mios-version-min=${{ needs.fetch.outputs.ios }}"
         LDFLAGS="-isysroot $(xcrun --sdk ${{ matrix.build.sdk }} --show-sdk-path) -mios-version-min=${{ needs.fetch.outputs.ios }}"
+      env:
+        SCCACHE_GHA_ENABLED: 'true'
     - name: Upload the bzip2 artifact
       uses: actions/upload-artifact@v4
       with:
-        name: bz2-${{ matrix.build.sdk }}-${{ matrix.build.arch }}
+        name: bz2-${{ matrix.build.host }}
         path: ${{ github.workspace }}/install/bz2
         if-no-files-found: error
         retention-days: 1

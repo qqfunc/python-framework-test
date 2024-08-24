@@ -1,0 +1,8 @@
+[build]
+cc = "sccache xcrun --sdk %s clang -target %s"
+ios = "13.0"
+
+[lib]
+bz2 = "1.0.8"
+ffi = "3.4.6"
+xz = "5.6.2"
