@@ -62,7 +62,7 @@ jobs:
       uses: actions/cache@v4
       with:
         path: ${{ github.workspace }}/install/bz2
-        key: bz2-${{ matrix.build.host }}-${{ needs.fetch.outputs.bz2 }}
+        key: bz2-${{ needs.fetch.outputs.bz2 }}-${{ matrix.build.host }}
     - name: Download bzip2 source
       run: |
         curl -O https://www.sourceware.org/pub/bzip2/bzip2-${{ needs.fetch.outputs.bz2 }}.tar.gz
@@ -110,7 +110,7 @@ jobs:
       uses: actions/cache@v4
       with:
         path: ${{ github.workspace }}/install/ffi
-        key: ffi-${{ matrix.build.host }}-${{ needs.fetch.outputs.ffi }}
+        key: ffi-${{ needs.fetch.outputs.ffi }}-${{ matrix.build.host }}
     - name: Download libffi source
       if: ${{ steps.cache.outputs.cache-hit != 'true' }}
       run: >
@@ -177,7 +177,7 @@ jobs:
       uses: actions/cache@v4
       with:
         path: ${{ github.workspace }}/install/xz
-        key: xz-${{ matrix.build.host }}-${{ needs.fetch.outputs.xz }}
+        key: xz-${{ needs.fetch.outputs.xz }}-${{ matrix.build.host }}
     - name: Download XZ Utils source
       if: ${{ steps.cache.outputs.cache-hit != 'true' }}
       run: >
