@@ -22,6 +22,8 @@ jobs:
       xz: ${{ steps.ver.outputs.xz }}
 
     steps:
+    - name: Checkout ${{ github.repository }}
+      uses: actions/checkout@v4
     - name: Get build information from build.toml
       id: info
       run: |
