@@ -272,12 +272,12 @@ jobs:
       working-directory: cpython
       run: >
         ./configure
-        BZIP2_CFLAGS="-I${{ github.workspace }}/install/bz2-${{ matrix.build.sdk }}-${{ matrix.build.arch }}/include"
-        BZIP2_LIBS="-L${{ github.workspace }}/install/bz2-${{ matrix.build.sdk }}-${{ matrix.build.arch }}/lib -lbz2"
-        LIBFFI_CFLAGS="-I${{ github.workspace }}/install/ffi-${{ matrix.build.sdk }}-${{ matrix.build.arch }}/include"
-        LIBFFI_LIBS="-L${{ github.workspace }}/install/ffi-${{ matrix.build.sdk }}-${{ matrix.build.arch }}/lib -lffi"
-        LIBLZMA_CFLAGS="-I${{ github.workspace }}/install/xz-${{ matrix.build.sdk }}-${{ matrix.build.arch }}/include"
-        LIBLZMA_LIBS="-L${{ github.workspace }}/install/xz-${{ matrix.build.sdk }}-${{ matrix.build.arch }}/lib -llzma"
+        BZIP2_CFLAGS="-I${{ github.workspace }}/install/bz2-${{ matrix.build.host }}/include"
+        BZIP2_LIBS="-L${{ github.workspace }}/install/bz2-${{ matrix.build.host }}/lib -lbz2"
+        LIBFFI_CFLAGS="-I${{ github.workspace }}/install/ffi-${{ matrix.build.host }}/include"
+        LIBFFI_LIBS="-L${{ github.workspace }}/install/ffi-${{ matrix.build.host }}/lib -lffi"
+        LIBLZMA_CFLAGS="-I${{ github.workspace }}/install/xz-${{ matrix.build.host }}/include"
+        LIBLZMA_LIBS="-L${{ github.workspace }}/install/xz-${{ matrix.build.host }}/lib -llzma"
         --enable-framework="${{ github.workspace }}/framework"
         --build=$(uname -m)-apple-darwin
         --host=${{ matrix.build.host }}
