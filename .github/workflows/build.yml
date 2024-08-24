@@ -257,6 +257,13 @@ jobs:
         -- -b v${{ steps.pyver.outputs.py }} --depth=1
       env:
         GH_TOKEN: ${{ github.token }}
+    - name: Upload pyconfig.h
+      uses: actions/upload-artifact@v4
+      with:
+        name: pyconfig.h-cp${{ matrix.python-version }}
+        path: ${{ github.workspace }}/cpython/iOS/Resources/pyconfig.h
+        if-no-files-found: error
+        retention-days: 1
     - name: Download artifacts
       uses: actions/download-artifact@v4
       with:
@@ -292,9 +299,9 @@ jobs:
         if-no-files-found: error
         retention-days: 1
 
-  build-python-xcframework:
-    name: Build Python.xcframework
-    needs: build-python-framework
+  create-iphoneos-framework:
+    name: Create Python.framework for iphoneos
+    needs: [fetch, build-python-framework]
     runs-on: macos-latest
 
     strategy:
@@ -309,4 +316,123 @@ jobs:
       uses: actions/download-artifact@v4
       with:
         path: ${{ github.workspace }}/frameworks
-        pattern: 'cp${{ matrix.python-version }}-*'
+        pattern: 'cp${{ matrix.python-version }}-arm64-apple-ios${{ needs.fetch.outputs.ios }}'
+    - name: Copy iphoneos framework
+      working-directory: frameworks
+      run: >
+        cp
+        cp${{ matrix.python-version }}-arm64-apple-ios${{ needs.fetch.outputs.ios }}
+        cp${{ matrix.python-version }}-iphoneos
+    - name: Upload Python.framework
+      uses: actions/upload-artifact@v4
+      with:
+        name: cp${{ matrix.python-version }}-iphoneos
+        path: ${{ github.workspace }}/frameworks/cp${{ matrix.python-version }}-iphoneos
+        if-no-files-found: error
+        retention-days: 1
+
+  create-iphonesimulator-framework:
+    name: Create Python.framework for iphonesimulator
+    needs: [fetch, build-python-framework]
+    runs-on: macos-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.13-dev']
+
+    steps:
+    - name: Checkout ${{ github.repository }}
+      uses: actions/checkout@v4
+    - name: Download artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: ${{ github.workspace }}/frameworks
+        pattern: 'cp${{ matrix.python-version }}-*-apple-ios${{ needs.fetch.outputs.ios }}-simulator'
+    - name: Copy binaries
+      working-directory: frameworks
+      run: >
+        cp
+        cp${{ matrix.python-version }}-arm64-apple-ios${{ needs.fetch.outputs.ios }}-simulator/bin
+        cp${{ matrix.python-version }}-iphonesimulator/bin
+    - name: Copy standard libraries
+      working-directory: frameworks
+      run: >
+        cp
+        cp${{ matrix.python-version }}-arm64-apple-ios${{ needs.fetch.outputs.ios }}-simulator/lib
+        cp${{ matrix.python-version }}-iphonesimulator/lib
+    - name: Create a new framework directory
+      working-directory: frameworks
+      run: |
+        mkdir -p cp${{ matrix.python-version }}-iphonesimulator/Python.framework
+    - name: Copy headers
+      working-directory: frameworks
+      run: >
+        cp
+        cp${{ matrix.python-version }}-arm64-apple-ios${{ needs.fetch.outputs.ios }}-simulator/Python.framework/Headers
+        cp${{ matrix.python-version }}-iphonesimulator/Python.framework/Headers
+    - name: Copy pyconfig-arm64.h
+      working-directory: frameworks
+      run: >
+        cp
+        cp${{ matrix.python-version }}-arm64-apple-ios${{ needs.fetch.outputs.ios }}-simulator/Python.framework/Headers/pyconfig.h
+        cp${{ matrix.python-version }}-iphonesimulator/Python.framework/Headers/pyconfig-arm64.h
+    - name: Copy pyconfig-x86_64.h
+      working-directory: frameworks
+      run: >
+        cp
+        cp${{ matrix.python-version }}-x86_64-apple-ios${{ needs.fetch.outputs.ios }}-simulator/Python.framework/Headers/pyconfig.h
+        cp${{ matrix.python-version }}-iphonesimulator/Python.framework/Headers/pyconfig-x86_64.h
+    - name: Download pyconfig.h
+      uses: actions/download-artifact@v4
+      with:
+        path: ${{ github.workspace }}/frameworks/cp${{ matrix.python-version }}-iphonesimulator/Python.framework/Headers
+        pattern: 'pyconfig.h-cp${{ matrix.python-version }}'
+    - name: Copy Info.plist
+      working-directory: frameworks
+      run: >
+        cp
+        cp${{ matrix.python-version }}-arm64-apple-ios${{ needs.fetch.outputs.ios }}-simulator/Python.framework/Info.plist
+        cp${{ matrix.python-version }}-iphonesimulator/Python.framework/Info.plist
+    - name: Merge iphoneossimulator farmeworks
+      working-directory: frameworks
+      run: >
+        lipo -create
+        -output cp${{ matrix.python-version }}-iphonesimulator/Python.framework/Python
+        cp${{ matrix.python-version }}-arm64-apple-ios${{ needs.fetch.outputs.ios }}-simulator/Python.framework/Python
+        cp${{ matrix.python-version }}-x86_64-apple-ios${{ needs.fetch.outputs.ios }}-simulator/Python.framework/Python
+    - name: Delete platform-specific files
+      working-directory: frameworks/cp${{ matrix.python-version }}-iphonesimulator/lib/
+      run: |
+        rm -r
+    - name: Upload Python.framework
+      uses: actions/upload-artifact@v4
+      with:
+        name: cp${{ matrix.python-version }}-iphonesimulator
+        path: ${{ github.workspace }}/frameworks/cp${{ matrix.python-version }}-arm64-apple-ios${{ needs.fetch.outputs.ios }}
+        if-no-files-found: error
+        retention-days: 1
+
+  create-xcframework:
+    name: Build Python.xcframework
+    needs: [create-iphoneos-framework, create-iphonesimulator-framework]
+    runs-on: macos-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.13-dev']
+
+    steps:
+    - name: Checkout ${{ github.repository }}
+      uses: actions/checkout@v4
+    - name: Download Python.framework for iphoneos
+      uses: actions/download-artifact@v4
+      with:
+        path: ${{ github.workspace }}/frameworks
+        pattern: 'cp${{ matrix.python-version }}-iphoneos'
+    - name: Download Python.framework for iphonesimulator
+      uses: actions/download-artifact@v4
+      with:
+        path: ${{ github.workspace }}/frameworks
+        pattern: 'cp${{ matrix.python-version }}-iphonesimulator'
