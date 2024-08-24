@@ -62,7 +62,7 @@ jobs:
     - name: Download bzip2 source
       run: |
         curl -O https://www.sourceware.org/pub/bzip2/bzip2-${{ needs.fetch.outputs.bz2 }}.tar.gz
-        tar -xf bzip2-${{ needs.fetch.outputs.bz2 }}.tar.gz
+        tar -xzf bzip2-${{ needs.fetch.outputs.bz2 }}.tar.gz
     - name: Build bzip2
       working-directory: bzip2-${{ needs.fetch.outputs.bz2 }}
       run: >
