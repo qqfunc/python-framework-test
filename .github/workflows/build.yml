@@ -72,7 +72,7 @@ jobs:
       run: >
         make install
         PREFIX="${{ github.workspace }}/install/bz2"
-        CC="sccache xcrun --sdk ${{ matrix.build.sdk }} clang -target ${{ matrix.build.host }}"
+        CC="xcrun --sdk ${{ matrix.build.sdk }} clang -target ${{ matrix.build.host }}"
         CFLAGS="--sysroot=$(xcrun --sdk ${{ matrix.build.sdk }} --show-sdk-path) -mios-version-min=${{ needs.fetch.outputs.ios }}"
         LDFLAGS="-isysroot $(xcrun --sdk ${{ matrix.build.sdk }} --show-sdk-path) -mios-version-min=${{ needs.fetch.outputs.ios }}"
     - name: Upload the bzip2 artifact
