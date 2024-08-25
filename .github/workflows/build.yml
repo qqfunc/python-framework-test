@@ -19,6 +19,7 @@ jobs:
     runs-on: ubuntu-latest
 
     outputs:
+      py: ${{ steps.info.outputs.py }}
       ios: ${{ steps.info.outputs.ios }}
       bz2: ${{ steps.ver.outputs.bz2 }}
       ffi: ${{ steps.ver.outputs.ffi }}
@@ -30,6 +31,7 @@ jobs:
     - name: Get build information from build.toml
       id: info
       run: |
+        echo "py=$(yq .build.py build.toml -oj)" >> $GITHUB_OUTPUT
         echo "ios=$(yq .build.ios build.toml)" >> $GITHUB_OUTPUT
     - name: Get library version information from build.toml
       id: ver
@@ -257,13 +259,6 @@ jobs:
         -- -b v${{ steps.pyver.outputs.py }} --depth=1
       env:
         GH_TOKEN: ${{ github.token }}
-    - name: Upload pyconfig.h
-      uses: actions/upload-artifact@v4
-      with:
-        name: pyconfig.h-cp${{ matrix.python-version }}
-        path: ${{ github.workspace }}/cpython/iOS/Resources/pyconfig.h
-        if-no-files-found: error
-        retention-days: 1
     - name: Download artifacts
       uses: actions/download-artifact@v4
       with:
@@ -383,11 +378,6 @@ jobs:
         cp
         cp${{ matrix.python-version }}-x86_64-apple-ios${{ needs.fetch.outputs.ios }}-simulator/Python.framework/Headers/pyconfig.h
         cp${{ matrix.python-version }}-iphonesimulator/Python.framework/Headers/pyconfig-x86_64.h
-    - name: Download pyconfig.h
-      uses: actions/download-artifact@v4
-      with:
-        path: ${{ github.workspace }}/frameworks/cp${{ matrix.python-version }}-iphonesimulator/Python.framework/Headers
-        pattern: 'pyconfig.h-cp${{ matrix.python-version }}'
     - name: Copy Info.plist
       working-directory: frameworks
       run: >
