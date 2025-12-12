@@ -260,7 +260,7 @@ jobs:
       env:
         GH_TOKEN: ${{ github.token }}
     - name: Download artifacts
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v7
       with:
         path: ${{ github.workspace }}/install
         pattern: '*-${{ matrix.build.host }}'
@@ -308,7 +308,7 @@ jobs:
     - name: Checkout ${{ github.repository }}
       uses: actions/checkout@v4
     - name: Download artifacts
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v7
       with:
         path: ${{ github.workspace }}/frameworks
         pattern: 'cp${{ matrix.python-version }}-arm64-apple-ios${{ needs.fetch.outputs.ios }}'
@@ -340,7 +340,7 @@ jobs:
     - name: Checkout ${{ github.repository }}
       uses: actions/checkout@v4
     - name: Download artifacts
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v7
       with:
         path: ${{ github.workspace }}/frameworks
         pattern: 'cp${{ matrix.python-version }}-*-apple-ios${{ needs.fetch.outputs.ios }}-simulator'
@@ -417,12 +417,12 @@ jobs:
     - name: Checkout ${{ github.repository }}
       uses: actions/checkout@v4
     - name: Download Python.framework for iphoneos
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v7
       with:
         path: ${{ github.workspace }}/frameworks
         pattern: 'cp${{ matrix.python-version }}-iphoneos'
     - name: Download Python.framework for iphonesimulator
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v7
       with:
         path: ${{ github.workspace }}/frameworks
         pattern: 'cp${{ matrix.python-version }}-iphonesimulator'
