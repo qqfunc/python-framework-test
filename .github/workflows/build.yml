@@ -64,7 +64,7 @@ jobs:
       uses: actions/checkout@v4
     - name: Cache bzip2
       id: cache
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         path: ${{ github.workspace }}/install/bz2
         key: bz2-${{ needs.fetch.outputs.bz2 }}-${{ matrix.build.host }}
@@ -112,7 +112,7 @@ jobs:
       uses: actions/checkout@v4
     - name: Cache libffi
       id: cache
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         path: ${{ github.workspace }}/install/ffi
         key: ffi-${{ needs.fetch.outputs.ffi }}-${{ matrix.build.host }}
@@ -179,7 +179,7 @@ jobs:
       uses: actions/checkout@v4
     - name: Cache XZ Utils
       id: cache
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         path: ${{ github.workspace }}/install/xz
         key: xz-${{ needs.fetch.outputs.xz }}-${{ matrix.build.host }}
